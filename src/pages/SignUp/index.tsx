@@ -18,6 +18,7 @@ import logoImg from '../../assets/logo.png';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { Container, BackToSignIn, BackToSignInText, Title } from './styles';
+import api from '../../services/api';
 
 interface SignUpFormData {
   name: string;
@@ -31,29 +32,39 @@ const SignUp: React.FC = () => {
   const passwordInputRef = useRef<TextInput>(null);
   const navigation = useNavigation();
 
-  const handleSignUp = useCallback(async (data: SignUpFormData) => {
-    try {
-      formRef.current?.setErrors({});
-      const schema = Yup.object().shape({
-        name: Yup.string().required('Nome obrigatório'),
-        email: Yup.string()
-          .required('Email obrigatório')
-          .email('Digite um email válido'),
-        password: Yup.string().min(6, 'No mínimo 6 dígitos'),
-      });
-      await schema.validate(data, { abortEarly: false });
-    } catch (err) {
-      if (err instanceof Yup.ValidationError) {
-        const errors = getValidationErrors(err);
-        formRef.current?.setErrors(errors);
-        return;
+  const handleSignUp = useCallback(
+    async (data: SignUpFormData) => {
+      try {
+        formRef.current?.setErrors({});
+        const schema = Yup.object().shape({
+          name: Yup.string().required('Nome obrigatório'),
+          email: Yup.string()
+            .required('Email obrigatório')
+            .email('Digite um email válido'),
+          password: Yup.string().min(6, 'No mínimo 6 dígitos'),
+        });
+        await schema.validate(data, { abortEarly: false });
+        await api.post('/users', data);
+        Alert.alert(
+          'Cadastro realizado com sucesso!',
+          'Você já pode fazer login na aplicação',
+        );
+        navigation.navigate('SignIn');
+      } catch (err) {
+        console.log(err);
+        if (err instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(err);
+          formRef.current?.setErrors(errors);
+          return;
+        }
+        Alert.alert(
+          'Erro na criação',
+          'Ocorreu um erro ao fazer a criação de conta, tente novamente',
+        );
       }
-      Alert.alert(
-        'Erro na criação',
-        'Ocorreu um erro ao fazer a criação de conta, tente novamente',
-      );
-    }
-  }, []);
+    },
+    [navigation],
+  );
 
   return (
     <>
